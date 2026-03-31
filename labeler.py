@@ -175,9 +175,23 @@ class PayeeLabeler:
 
     async def _label_one(self, row: Dict) -> Dict:
         prompt = build_label_prompt(row["narration"])
-        raw = await self.llm.generate_one(prompt)
-        payee = raw.strip().splitlines()[0].strip()
-        # No strict validation beyond trimming; fine-tuning can handle blanks.
+        try:
+            raw = await self.llm.generate_one(prompt)
+            payee = raw.strip().splitlines()[0].strip()
+        except Exception as e:  # noqa: BLE001
+            # If the API key is blocked, fail fast so the user can rotate the key.
+            msg = str(e).lower()
+            if "api key was reported as leaked" in msg or "leaked" in msg and "api key" in msg:
+                raise RuntimeError(
+                    "Gemini API key is blocked: reported as leaked. Please replace GEMINI_API_KEY in .env with a new key."
+                ) from e
+            if "permission_denied" in msg or "403" in msg:
+                raise RuntimeError(
+                    "Gemini API call failed with 403 PERMISSION_DENIED. Check GEMINI_API_KEY permissions/quotas."
+                ) from e
+            # For transient/validation failures, label as empty and continue training data pipeline.
+            payee = ""
+
         rec = {
             "id": row["id"],
             "type": row["type"],
@@ -185,6 +199,7 @@ class PayeeLabeler:
             "payee": payee,
             "model": self.llm.config.model,
         }
+
         # Append atomically.
         os.makedirs(self.output_dir, exist_ok=True)
         with self.labels_path.open("a", encoding="utf-8", buffering=1) as fp:
@@ -210,41 +225,29 @@ class PayeeLabeler:
             len(to_process),
         )
 
-        q: asyncio.Queue[Dict] = asyncio.Queue()
-        for r in to_process:
-            await q.put(r)
-
         async def worker(worker_id: int) -> None:
-            nonlocal q
+            # Simple work-stealing over an index: avoids deadlocks on fatal errors.
             while True:
-                try:
-                    row = q.get_nowait()
-                except asyncio.QueueEmpty:
-                    return
-                try:
-                    rec = await self._label_one(row)
-                    async with self._state_lock:
-                        self.labeled_ids.add(rec["id"])
-                        self.label_ckpt.total_labeled = len(self.labeled_ids)
-                        save_label_checkpoint(self.label_ckpt_path, self.label_ckpt)
-                        if self.label_ckpt.total_labeled % self.cfg.progress_log_every == 0:
-                            log.info(
-                                "labeled=%s / %s",
-                                self.label_ckpt.total_labeled,
-                                len(self.rows),
-                            )
-                finally:
-                    q.task_done()
+                async with self._state_lock:
+                    idx = getattr(self, "_next_label_idx", 0)
+                    if idx >= len(to_process):
+                        return
+                    setattr(self, "_next_label_idx", idx + 1)
+                row = to_process[idx]
+                rec = await self._label_one(row)
+                async with self._state_lock:
+                    self.labeled_ids.add(rec["id"])
+                    self.label_ckpt.total_labeled = len(self.labeled_ids)
+                    save_label_checkpoint(self.label_ckpt_path, self.label_ckpt)
+                    if self.label_ckpt.total_labeled % self.cfg.progress_log_every == 0:
+                        log.info("labeled=%s / %s", self.label_ckpt.total_labeled, len(self.rows))
 
         # Use the same max concurrency as the generator's LLM client.
         workers = [
             asyncio.create_task(worker(i))
             for i in range(max(1, self.llm.config.max_concurrency))
         ]
-        await q.join()
-        for t in workers:
-            t.cancel()
-        await asyncio.gather(*workers, return_exceptions=True)
+        await asyncio.gather(*workers)
         log.info("Labeling complete: labeled=%s / %s", self.label_ckpt.total_labeled, len(self.rows))
 
 
