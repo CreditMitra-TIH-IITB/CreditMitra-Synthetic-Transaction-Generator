@@ -69,7 +69,8 @@ class AsyncTokenBucket:
 @dataclass(frozen=True)
 class LLMConfig:
     api_key_env: str = "GEMINI_API_KEY"
-    model: str = "gemma-2-27b-it"
+    # Prefer the Gemma 27B instruction-tuned variant that is commonly available.
+    model: str = "gemma-3-27b-it"
     rpm: int = 60
     max_concurrency: int = 8
     timeout_s: int = 60
@@ -114,8 +115,9 @@ class GeminiNarrationClient:
         try:
             models = list(self._client.models.list())
         except Exception:
-            # Last-resort default; user can override via GEMINI_MODEL.
-            return "gemma-2-27b-it"
+            # If we can't list models (e.g. 403), fall back to the most-likely
+            # Gemma 27B instruction-tuned model variant.
+            return "gemma-3-27b-it"
 
         names: list[str] = []
         for m in models:
@@ -142,7 +144,7 @@ class GeminiNarrationClient:
         for fallback in ["gemini-2.0-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]:
             if any(fallback in n for n in names):
                 return fallback
-        return configured or "gemma-2-27b-it"
+        return configured or "gemma-3-27b-it"
 
     @retry(
         reraise=True,
