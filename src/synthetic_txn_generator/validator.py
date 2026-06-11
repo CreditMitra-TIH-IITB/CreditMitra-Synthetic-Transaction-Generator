@@ -74,4 +74,3 @@ def validate_narration(narration: str, txn_type: str, cfg: ValidationConfig | No
             return False, "looks_like_p2p"
 
     return True, "ok"
-

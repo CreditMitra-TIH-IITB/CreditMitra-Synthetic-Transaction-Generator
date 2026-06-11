@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
-from exporter import default_export_config
-from llm_client import GeminiNarrationClient
+from .checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
+from .exporter import default_export_config
+from .llm_client import GeminiNarrationClient
 
 
 log = logging.getLogger("labeler")
@@ -254,4 +254,3 @@ class PayeeLabeler:
 async def run_labeler(output_dir: Optional[str] = None, output_jsonl: Optional[str] = None) -> None:
     labeler = PayeeLabeler(output_dir=output_dir, output_jsonl=output_jsonl)
     await labeler.run()
-
