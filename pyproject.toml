@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "creditmitra-synthetic-transaction-generator"
+version = "0.1.0"
+description = "Synthetic transaction narration pipeline"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "google-genai>=1.2.0",
+    "python-dotenv>=1.0.1",
+    "tenacity>=8.2.3",
+]
+
+[project.scripts]
+synthetic-txns = "synthetic_txn_generator.main:entrypoint"

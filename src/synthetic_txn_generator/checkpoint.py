@@ -57,4 +57,3 @@ def save_checkpoint(path: Path, cp: Checkpoint) -> None:
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(cp.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
     os.replace(tmp, path)
-

@@ -41,4 +41,3 @@ class JSONLExporter:
             self._fp.close()
         except Exception:
             pass
-

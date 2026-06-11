@@ -11,11 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
-from exporter import JSONLExporter, default_export_config
-from llm_client import GeminiNarrationClient
-from prompt_builder import PromptBuilder, load_examples_from_csv_rows
-from validator import normalize_for_hash, validate_narration
+from .checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
+from .exporter import JSONLExporter, default_export_config
+from .llm_client import GeminiNarrationClient
+from .prompt_builder import PromptBuilder, load_examples_from_csv_rows
+from .validator import normalize_for_hash, validate_narration
 
 
 log = logging.getLogger("generator")
@@ -262,4 +262,3 @@ async def run_generator(input_csv: str, total: int, output_dir: Optional[str] = 
         await gen.run()
     finally:
         gen.close()
-

@@ -1,0 +1,32 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and builds
+build/
+dist/
+*.egg-info/
+
+# Environment variables (sensitive API keys)
+.env
+
+# Output data & checkpoints (ignore generated artifacts)
+data/output.jsonl
+data/labels.jsonl
+data/checkpoint.json
+data/label_checkpoint.json
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

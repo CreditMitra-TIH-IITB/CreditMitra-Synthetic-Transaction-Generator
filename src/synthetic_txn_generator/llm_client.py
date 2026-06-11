@@ -185,4 +185,3 @@ class GeminiNarrationClient:
         if not text:
             raise GeminiTransientError("Empty response text from model")
         return str(text).strip()
-
