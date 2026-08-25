@@ -55,5 +55,7 @@ def load_checkpoint(path: Path) -> Checkpoint:
 def save_checkpoint(path: Path, cp: Checkpoint) -> None:
     cp.last_updated_timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(cp.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps(cp.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     os.replace(tmp, path)

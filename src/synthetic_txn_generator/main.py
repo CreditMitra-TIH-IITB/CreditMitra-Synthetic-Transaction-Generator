@@ -59,9 +59,15 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     try:
         if args.mode == "generate":
-            asyncio.run(run_generator(input_csv=args.input, total=args.total, output_dir=args.output_dir))
+            asyncio.run(
+                run_generator(
+                    input_csv=args.input, total=args.total, output_dir=args.output_dir
+                )
+            )
         else:
-            asyncio.run(run_labeler(output_dir=args.output_dir, output_jsonl=args.output_jsonl))
+            asyncio.run(
+                run_labeler(output_dir=args.output_dir, output_jsonl=args.output_jsonl)
+            )
     except KeyboardInterrupt:
         logging.getLogger("main").warning("Interrupted by user; safe to resume later.")
         return 130

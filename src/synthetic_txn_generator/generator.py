@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from .checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
+from .checkpoint import (
+    Checkpoint,
+    default_checkpoint_path,
+    load_checkpoint,
+    save_checkpoint,
+)
 from .exporter import JSONLExporter, default_export_config
 from .llm_client import GeminiNarrationClient
 from .prompt_builder import PromptBuilder, load_examples_from_csv_rows
@@ -97,7 +102,9 @@ class NarrationGenerator:
         self.exporter = JSONLExporter(self.export_cfg)
 
         # Resume sources:
-        self.seen_hashes, rebuilt = rebuild_state_from_output(self.export_cfg.output_jsonl)
+        self.seen_hashes, rebuilt = rebuild_state_from_output(
+            self.export_cfg.output_jsonl
+        )
         on_disk = load_checkpoint(self.ckpt_path)
         # Output file is authoritative; checkpoint is advisory.
         self.checkpoint = rebuilt
@@ -123,7 +130,11 @@ class NarrationGenerator:
     def _pick_type(self) -> str:
         if self._should_force_merchant():
             return "MERCHANT"
-        return "MERCHANT" if (os.urandom(1)[0] / 255.0) < self.cfg.merchant_ratio else "P2P"
+        return (
+            "MERCHANT"
+            if (os.urandom(1)[0] / 255.0) < self.cfg.merchant_ratio
+            else "P2P"
+        )
 
     async def _generate_one_accepted(self, item_id: int) -> Dict:
         for attempt in range(1, self.cfg.max_attempts_per_item + 1):
@@ -140,13 +151,25 @@ class NarrationGenerator:
 
             ok, reason = validate_narration(narration, txn_type)
             if not ok:
-                log.info("reject item=%s attempt=%s type=%s reason=%s text=%r", item_id, attempt, txn_type, reason, narration[:120])
+                log.info(
+                    "reject item=%s attempt=%s type=%s reason=%s text=%r",
+                    item_id,
+                    attempt,
+                    txn_type,
+                    reason,
+                    narration[:120],
+                )
                 continue
 
             h = _sha1(normalize_for_hash(narration).lower())
             async with self._state_lock:
                 if h in self.seen_hashes:
-                    log.info("duplicate item=%s attempt=%s type=%s", item_id, attempt, txn_type)
+                    log.info(
+                        "duplicate item=%s attempt=%s type=%s",
+                        item_id,
+                        attempt,
+                        txn_type,
+                    )
                     continue
 
                 # Accept: persist immediately, then update in-memory & checkpoint.
@@ -171,11 +194,17 @@ class NarrationGenerator:
                 save_checkpoint(self.ckpt_path, self.checkpoint)
                 return rec
 
-        raise RuntimeError(f"Failed to generate valid unique narration after {self.cfg.max_attempts_per_item} attempts")
+        raise RuntimeError(
+            f"Failed to generate valid unique narration after {self.cfg.max_attempts_per_item} attempts"
+        )
 
     async def run(self) -> None:
         if self.checkpoint.total_generated >= self.cfg.target_total:
-            log.info("Already complete: %s/%s", self.checkpoint.total_generated, self.cfg.target_total)
+            log.info(
+                "Already complete: %s/%s",
+                self.checkpoint.total_generated,
+                self.cfg.target_total,
+            )
             return
 
         log.info(
@@ -201,10 +230,18 @@ class NarrationGenerator:
                     await self._generate_one_accepted(item_id)
 
                     async with self._state_lock:
-                        if self.checkpoint.total_generated % self.cfg.progress_log_every == 0:
+                        if (
+                            self.checkpoint.total_generated
+                            % self.cfg.progress_log_every
+                            == 0
+                        ):
                             elapsed = max(1e-6, time.monotonic() - self._start_time)
                             speed = self.checkpoint.total_generated / elapsed
-                            pct = 100.0 * self.checkpoint.total_generated / self.cfg.target_total
+                            pct = (
+                                100.0
+                                * self.checkpoint.total_generated
+                                / self.cfg.target_total
+                            )
                             log.info(
                                 "progress=%.2f%% total=%s p2p=%s merchant=%s speed=%.2f txn/s",
                                 pct,
@@ -217,6 +254,7 @@ class NarrationGenerator:
                     q.task_done()
                 await asyncio.sleep(0)
                 # Continue until producer is done or target reached.
+
         async def guarded_worker(worker_id: int, q: asyncio.Queue[int]) -> None:
             try:
                 await worker(worker_id, q)
@@ -256,8 +294,12 @@ class NarrationGenerator:
                 raise first_error["err"]
 
 
-async def run_generator(input_csv: str, total: int, output_dir: Optional[str] = None) -> None:
-    gen = NarrationGenerator(input_csv=input_csv, output_dir=output_dir, target_total=total)
+async def run_generator(
+    input_csv: str, total: int, output_dir: Optional[str] = None
+) -> None:
+    gen = NarrationGenerator(
+        input_csv=input_csv, output_dir=output_dir, target_total=total
+    )
     try:
         await gen.run()
     finally:

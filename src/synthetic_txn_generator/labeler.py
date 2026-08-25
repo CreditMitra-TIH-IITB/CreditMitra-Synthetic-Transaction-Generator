@@ -8,7 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from .checkpoint import Checkpoint, default_checkpoint_path, load_checkpoint, save_checkpoint
+from .checkpoint import (
+    Checkpoint,
+    default_checkpoint_path,
+    load_checkpoint,
+    save_checkpoint,
+)
 from .exporter import default_export_config
 from .llm_client import GeminiNarrationClient
 
@@ -56,7 +61,9 @@ def save_label_checkpoint(path: Path, cp: LabelCheckpoint) -> None:
 
     cp.last_updated_timestamp = _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime())
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(cp.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps(cp.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     os.replace(tmp, path)
 
 
@@ -137,7 +144,11 @@ Output format:
 
 
 def build_label_prompt(narration: str) -> str:
-    return PAYEE_EXTRACTION_INSTRUCTIONS + "\n\nTransaction narration:\n" + narration.strip()
+    return (
+        PAYEE_EXTRACTION_INSTRUCTIONS
+        + "\n\nTransaction narration:\n"
+        + narration.strip()
+    )
 
 
 @dataclass(frozen=True)
@@ -181,7 +192,9 @@ class PayeeLabeler:
         except Exception as e:  # noqa: BLE001
             # If the API key is blocked, fail fast so the user can rotate the key.
             msg = str(e).lower()
-            if "api key was reported as leaked" in msg or "leaked" in msg and "api key" in msg:
+            if "api key was reported as leaked" in msg or (
+                "leaked" in msg and "api key" in msg
+            ):
                 raise RuntimeError(
                     "Gemini API key is blocked: reported as leaked. Please replace GEMINI_API_KEY in .env with a new key."
                 ) from e
@@ -210,7 +223,9 @@ class PayeeLabeler:
 
     async def run(self) -> None:
         if not self.rows:
-            log.warning("No narrations found in %s; nothing to label.", self.output_path)
+            log.warning(
+                "No narrations found in %s; nothing to label.", self.output_path
+            )
             return
 
         to_process = [r for r in self.rows if r["id"] not in self.labeled_ids]
@@ -240,7 +255,11 @@ class PayeeLabeler:
                     self.label_ckpt.total_labeled = len(self.labeled_ids)
                     save_label_checkpoint(self.label_ckpt_path, self.label_ckpt)
                     if self.label_ckpt.total_labeled % self.cfg.progress_log_every == 0:
-                        log.info("labeled=%s / %s", self.label_ckpt.total_labeled, len(self.rows))
+                        log.info(
+                            "labeled=%s / %s",
+                            self.label_ckpt.total_labeled,
+                            len(self.rows),
+                        )
 
         # Use the same max concurrency as the generator's LLM client.
         workers = [
@@ -248,9 +267,15 @@ class PayeeLabeler:
             for i in range(max(1, self.llm.config.max_concurrency))
         ]
         await asyncio.gather(*workers)
-        log.info("Labeling complete: labeled=%s / %s", self.label_ckpt.total_labeled, len(self.rows))
+        log.info(
+            "Labeling complete: labeled=%s / %s",
+            self.label_ckpt.total_labeled,
+            len(self.rows),
+        )
 
 
-async def run_labeler(output_dir: Optional[str] = None, output_jsonl: Optional[str] = None) -> None:
+async def run_labeler(
+    output_dir: Optional[str] = None, output_jsonl: Optional[str] = None
+) -> None:
     labeler = PayeeLabeler(output_dir=output_dir, output_jsonl=output_jsonl)
     await labeler.run()

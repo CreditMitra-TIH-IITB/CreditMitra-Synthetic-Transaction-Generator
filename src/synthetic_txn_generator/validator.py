@@ -27,7 +27,9 @@ def normalize_for_hash(s: str) -> str:
     return s2
 
 
-def validate_narration(narration: str, txn_type: str, cfg: ValidationConfig | None = None) -> Tuple[bool, str]:
+def validate_narration(
+    narration: str, txn_type: str, cfg: ValidationConfig | None = None
+) -> Tuple[bool, str]:
     cfg = cfg or ValidationConfig()
     txn_type = txn_type.upper().strip()
     if txn_type not in {"P2P", "MERCHANT"}:
@@ -69,7 +71,9 @@ def validate_narration(narration: str, txn_type: str, cfg: ValidationConfig | No
 
     if txn_type == "MERCHANT":
         # Merchant narrations often carry a brand-ish token; at least require absence of obvious person-only pattern.
-        if _HAS_UPI_HANDLE_RE.search(s) and re.search(r"\b(rahul|priya|ankit|sneha|apoorv|mahendr)\b", s, re.I):
+        if _HAS_UPI_HANDLE_RE.search(s) and re.search(
+            r"\b(rahul|priya|ankit|sneha|apoorv|mahendr)\b", s, re.I
+        ):
             # Still allow, but nudge away from pure P2P by rejecting the clearest cases.
             return False, "looks_like_p2p"
 

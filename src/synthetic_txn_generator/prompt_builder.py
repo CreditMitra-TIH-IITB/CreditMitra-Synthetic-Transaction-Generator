@@ -78,7 +78,9 @@ class PromptConfig:
 
 
 class PromptBuilder:
-    def __init__(self, real_examples: Sequence[str], config: PromptConfig | None = None):
+    def __init__(
+        self, real_examples: Sequence[str], config: PromptConfig | None = None
+    ):
         self.real_examples = [e.strip() for e in real_examples if e and e.strip()]
         if len(self.real_examples) < 5:
             raise ValueError("Need at least 5 real examples for style reference")
@@ -92,21 +94,33 @@ class PromptBuilder:
         k = random.randint(self.config.few_shot_min, self.config.few_shot_max)
         examples = random.sample(self.real_examples, k=k)
 
-        fmt_hint = random.choice(P2P_FORMAT_HINTS if txn_type == "P2P" else MERCHANT_FORMAT_HINTS)
+        fmt_hint = random.choice(
+            P2P_FORMAT_HINTS if txn_type == "P2P" else MERCHANT_FORMAT_HINTS
+        )
         noise = ", ".join(random.sample(NOISE_TOKENS, k=random.randint(2, 5)))
-        upi_hint = f"{random.choice(INDIAN_NAMES).lower()}{random.randint(10,9999)}@{random.choice(COMMON_UPI_HANDLES)}"
+        upi_hint = f"{random.choice(INDIAN_NAMES).lower()}{random.randint(10, 9999)}@{random.choice(COMMON_UPI_HANDLES)}"
         merchant_hint = random.choice(MERCHANTS)
 
         extra_constraints = []
         extra_constraints.append(f"- Suggested format hint: {fmt_hint}")
-        extra_constraints.append("- Output must be a single line (no quotes, no bullets).")
-        extra_constraints.append("- Keep it realistic for Indian banking SMS/statement narration.")
-        extra_constraints.append("- Add small noise: mixed casing, truncation, extra slashes/spaces, abbreviations.")
+        extra_constraints.append(
+            "- Output must be a single line (no quotes, no bullets)."
+        )
+        extra_constraints.append(
+            "- Keep it realistic for Indian banking SMS/statement narration."
+        )
+        extra_constraints.append(
+            "- Add small noise: mixed casing, truncation, extra slashes/spaces, abbreviations."
+        )
         extra_constraints.append(f"- Sprinkle abbreviations like: {noise}")
         if txn_type == "P2P":
-            extra_constraints.append(f"- Use realistic Indian person name/UPI handle (e.g. {upi_hint}).")
+            extra_constraints.append(
+                f"- Use realistic Indian person name/UPI handle (e.g. {upi_hint})."
+            )
         else:
-            extra_constraints.append(f"- Use realistic Indian merchant brand (e.g. {merchant_hint}).")
+            extra_constraints.append(
+                f"- Use realistic Indian merchant brand (e.g. {merchant_hint})."
+            )
 
         few_shot = "\n".join(f"- {e}" for e in examples)
 
@@ -117,9 +131,7 @@ class PromptBuilder:
             f"- Type: {txn_type}\n"
             "- Follow Indian banking formats (UPI/IMPS/NEFT/RTGS/POS)\n"
             "- Use realistic names, UPI IDs, merchants\n"
-            "- Avoid repetition and templates\n"
-            + "\n".join(extra_constraints)
-            + "\n\n"
+            "- Avoid repetition and templates\n" + "\n".join(extra_constraints) + "\n\n"
             "Return ONLY the narration string. No JSON. No explanation.\n\n"
             "Examples:\n"
             f"{few_shot}\n"

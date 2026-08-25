@@ -29,7 +29,9 @@ class JSONLExporter:
 
     def append(self, record: Dict[str, Any], fsync: bool = True) -> None:
         record = dict(record)
-        record.setdefault("written_at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        record.setdefault(
+            "written_at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        )
         line = json.dumps(record, ensure_ascii=False)
         self._fp.write(line + "\n")
         self._fp.flush()

@@ -56,7 +56,9 @@ class AsyncTokenBucket:
                 now = time.monotonic()
                 elapsed = now - self.updated_at
                 self.updated_at = now
-                self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_per_sec)
+                self.tokens = min(
+                    self.capacity, self.tokens + elapsed * self.refill_per_sec
+                )
                 if self.tokens >= 1.0:
                     self.tokens -= 1.0
                     return
@@ -141,7 +143,12 @@ class GeminiNarrationClient:
             return gemma_any[0]
 
         # Closest available general model if no Gemma is listed.
-        for fallback in ["gemini-2.0-pro", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]:
+        for fallback in [
+            "gemini-2.0-pro",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
+        ]:
             if any(fallback in n for n in names):
                 return fallback
         return configured or "gemma-3-27b-it"
